@@ -9,8 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#faf9f5;
-    --paper-2:#faf9f5;
+    --paper:#ffffff;
+    --paper-2:#ffffff;
     --ink:#1c1a16;
     --ink-soft:#5b564c;
     --rule:#ded9c9;
@@ -19,68 +19,17 @@
     --yellow:#f0c231;
     --actual:#a63a2c;
     --guess:#3d4b3f;
-    --blob-1:#0b1e38;
-    --blob-2:#173a63;
-    --blob-3:#2c5a94;
-    --blob-4:#5b84c4;
-    --on-dark:#eef2fa;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--blob-1);
-    color:var(--on-dark);
+    background:#ffffff;
+    color:var(--ink);
     font-family:'Noto Sans KR',sans-serif;
-    padding:32px 16px 60px;
-    min-height:100vh;
-    position:relative;
-    overflow-x:hidden;
+    padding:16px;
   }
-  .bg-fluid{
-    position:fixed;
-    inset:0;
-    z-index:-1;
-    overflow:hidden;
-    filter:blur(70px);
-  }
-  .blob{position:absolute;border-radius:50%;}
-  .blob1{
-    width:70vw;height:70vw;top:-25%;left:-20%;
-    background:radial-gradient(circle, var(--blob-3) 0%, transparent 70%);
-    animation:float1 26s ease-in-out infinite;
-  }
-  .blob2{
-    width:60vw;height:60vw;bottom:-25%;right:-15%;
-    background:radial-gradient(circle, var(--blob-4) 0%, transparent 70%);
-    animation:float2 32s ease-in-out infinite;
-  }
-  .blob3{
-    width:50vw;height:50vw;top:25%;right:5%;
-    background:radial-gradient(circle, var(--blob-2) 0%, transparent 70%);
-    animation:float3 22s ease-in-out infinite;
-    opacity:0.9;
-  }
-  .blob4{
-    width:55vw;height:55vw;bottom:0%;left:10%;
-    background:radial-gradient(circle, var(--blob-1) 0%, transparent 70%);
-    animation:float4 29s ease-in-out infinite;
-  }
-  @keyframes float1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(6%,8%) scale(1.1);}}
-  @keyframes float2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-7%,-5%) scale(1.08);}}
-  @keyframes float3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-5%,7%) scale(0.95);}}
-  @keyframes float4{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(5%,-6%) scale(1.05);}}
 
-  .wrap{max-width:880px;margin:0 auto;padding-top:24px;}
-
-  .intro{
-    font-size:15px;
-    line-height:1.7;
-    color:rgba(238,242,250,0.82);
-    max-width:640px;
-    margin:0 auto 28px;
-    text-align:center;
-  }
-  .intro b{color:var(--yellow);white-space:nowrap;}
+  .wrap{max-width:900px;margin:0 auto;}
 
   .panel{
     background:var(--paper);
@@ -88,7 +37,6 @@
     border-radius:6px;
     padding:22px clamp(12px,3vw,30px) 26px;
     position:relative;
-    box-shadow:0 20px 50px -20px rgba(0,0,0,0.5);
   }
 
   .panel-head{
@@ -229,24 +177,12 @@
 </style>
 </head>
 <body>
-<div class="bg-fluid" aria-hidden="true">
-  <div class="blob blob1"></div>
-  <div class="blob blob2"></div>
-  <div class="blob blob3"></div>
-  <div class="blob blob4"></div>
-</div>
 <div class="wrap">
-
-  <p class="intro">
-    1993년부터 2002년까지, 종이신문 열독률은 <b>87.8% → 82.1%</b>로 완만하게 내려갔습니다.<br>
-    이 흐름을 참고해서 <b>2002년부터 2025년까지</b> 그래프가 어떻게 이어졌을지 직접 그려보세요.<br>
-    선 위에서 마우스(또는 손가락)를 움직이면 예측선이 그려집니다.
-  </p>
 
   <div class="panel">
     <div class="panel-head">
       <div class="panel-title">종이신문 열독률 추이 (%)</div>
-      <div class="status" id="statusBadge">2002년부터 선을 그려보세요</div>
+      <div class="status" id="statusBadge">당신의 예측 점수는?</div>
     </div>
 
     <svg id="chart" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -431,16 +367,8 @@
   function updateStatus(){
     const cov = coverage();
     if(revealed) return;
-    if(cov > 0.9){
-      statusBadge.textContent = '2025년까지 다 그렸어요 — 정답을 확인해보세요';
-      revealBtn.disabled = false;
-    } else if(cov > 0){
-      statusBadge.textContent = '그리는 중… (2025년까지 이어서 그려보세요)';
-      revealBtn.disabled = true;
-    } else {
-      statusBadge.textContent = '2002년부터 선을 그려보세요';
-      revealBtn.disabled = true;
-    }
+    statusBadge.textContent = '당신의 예측 점수는?';
+    revealBtn.disabled = cov <= 0.9;
   }
 
   document.getElementById('resetBtn').addEventListener('click', function(){
@@ -484,8 +412,6 @@
     revealed = true;
     revealBtn.disabled = true;
     drawzone.style.cursor = 'default';
-    statusBadge.textContent = '정답 공개!';
-    statusBadge.classList.add('done');
     document.getElementById('legendActual').style.display = 'inline-flex';
 
     actualG.style.transition = 'opacity .6s ease';
@@ -514,6 +440,9 @@
     });
 
     const avgErr = totalErr / n;
+    const score = Math.max(0, Math.min(100, Math.round(100 - avgErr * 2.5)));
+    statusBadge.textContent = '정확도 ' + score + '점';
+    statusBadge.classList.add('done');
     let verdict;
     if(avgErr < 5){
       verdict = '평균 오차 <b>' + avgErr.toFixed(1) + '%p</b> — 꽤 정확하게 하락 추세를 읽어냈어요. 종이신문 열독률이 이렇게까지 가파르게 무너질 거라 예상한 사람은 많지 않았습니다.';
