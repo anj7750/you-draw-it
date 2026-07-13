@@ -80,7 +80,7 @@
     margin:0 auto 28px;
     text-align:center;
   }
-  .intro b{color:var(--yellow);}
+  .intro b{color:var(--yellow);white-space:nowrap;}
 
   .panel{
     background:var(--paper);
@@ -99,12 +99,12 @@
     gap:10px;
     margin-bottom:6px;
   }
-.panel-title{
-       font-family:'Noto Serif KR',serif;
-       font-weight:700;
-       font-size:19px;
-       color:var(--ink);
-   }
+  .panel-title{
+    font-family:'Noto Serif KR',serif;
+    font-weight:700;
+    font-size:19px;
+    color:var(--ink);
+  }
   .status{
     font-size:12.5px;
     font-weight:700;
@@ -238,8 +238,8 @@
 <div class="wrap">
 
   <p class="intro">
-    1993년부터 2002년까지, 종이신문 열독률은 <b>87.8% → 82.1%</b>로 완만하게 내려갔습니다.
-    이 흐름을 참고해서 <b>2002년부터 2025년까지</b> 그래프가 어떻게 이어졌을지 직접 그려보세요.
+    1993년부터 2002년까지, 종이신문 열독률은 <b>87.8% → 82.1%</b>로 완만하게 내려갔습니다.<br>
+    이 흐름을 참고해서 <b>2002년부터 2025년까지</b> 그래프가 어떻게 이어졌을지 직접 그려보세요.<br>
     선 위에서 마우스(또는 손가락)를 움직이면 예측선이 그려집니다.
   </p>
 
@@ -335,8 +335,8 @@
     knownG.appendChild(t);
   });
 
-  svg.appendChild(el('text',{class:'hint-text', x:(drawStartX+drawEndX)/2, y:M.top-14, 'text-anchor':'middle'})).textContent =
-    '↓ 여기서부터 2025년까지 그려보세요';
+  svg.appendChild(el('text',{class:'hint-text', x:drawStartX, y:M.top-14, 'text-anchor':'start'})).textContent =
+    '↓ 2002년, 여기서부터 그려보세요';
 
   // ---- user drawing layer ----
   const guessPath = el('path', {class:'guess-line', d:''});
