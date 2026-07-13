@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You Draw It — 종이신문 열독률</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf9f5;
+    --paper-2:#faf9f5;
+    --ink:#1c1a16;
+    --ink-soft:#5b564c;
+    --rule:#ded9c9;
+    --navy:#173a63;
+    --navy-2:#0e2743;
+    --yellow:#f0c231;
+    --actual:#a63a2c;
+    --guess:#3d4b3f;
+    --blob-1:#0b1e38;
+    --blob-2:#173a63;
+    --blob-3:#2c5a94;
+    --blob-4:#5b84c4;
+    --on-dark:#eef2fa;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--blob-1);
+    color:var(--on-dark);
+    font-family:'Noto Sans KR',sans-serif;
+    padding:32px 16px 60px;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+  .bg-fluid{
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    overflow:hidden;
+    filter:blur(70px);
+  }
+  .blob{position:absolute;border-radius:50%;}
+  .blob1{
+    width:70vw;height:70vw;top:-25%;left:-20%;
+    background:radial-gradient(circle, var(--blob-3) 0%, transparent 70%);
+    animation:float1 26s ease-in-out infinite;
+  }
+  .blob2{
+    width:60vw;height:60vw;bottom:-25%;right:-15%;
+    background:radial-gradient(circle, var(--blob-4) 0%, transparent 70%);
+    animation:float2 32s ease-in-out infinite;
+  }
+  .blob3{
+    width:50vw;height:50vw;top:25%;right:5%;
+    background:radial-gradient(circle, var(--blob-2) 0%, transparent 70%);
+    animation:float3 22s ease-in-out infinite;
+    opacity:0.9;
+  }
+  .blob4{
+    width:55vw;height:55vw;bottom:0%;left:10%;
+    background:radial-gradient(circle, var(--blob-1) 0%, transparent 70%);
+    animation:float4 29s ease-in-out infinite;
+  }
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(6%,8%) scale(1.1);}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-7%,-5%) scale(1.08);}}
+  @keyframes float3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-5%,7%) scale(0.95);}}
+  @keyframes float4{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(5%,-6%) scale(1.05);}}
+
+  .wrap{max-width:880px;margin:0 auto;padding-top:24px;}
+
+  .intro{
+    font-size:15px;
+    line-height:1.7;
+    color:rgba(238,242,250,0.82);
+    max-width:640px;
+    margin:0 auto 28px;
+    text-align:center;
+  }
+  .intro b{color:var(--yellow);}
+
+  .panel{
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:22px clamp(12px,3vw,30px) 26px;
+    position:relative;
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.5);
+  }
+
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .panel-title{
+    font-family:'Noto Serif KR',serif;
+    font-weight:700;
+    font-size:19px;
+  }
+  .status{
+    font-size:12.5px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:20px;
+    background:var(--navy);
+    color:var(--paper);
+    white-space:nowrap;
+  }
+  .status.done{background:var(--actual);}
+
+  svg{display:block;width:100%;height:auto;touch-action:none;user-select:none;}
+
+  .axis-line{stroke:var(--ink);stroke-width:1.4;}
+  .grid-line{stroke:var(--rule);stroke-width:1;}
+  .tick-label{font-size:12px;fill:var(--ink-soft);font-family:'Noto Sans KR',sans-serif;}
+  .year-label{font-size:12.5px;fill:var(--ink);font-weight:700;font-family:'Noto Sans KR',sans-serif;}
+
+  .known-line{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+  .known-dot{fill:var(--ink);}
+  .known-val{font-size:12.5px;font-weight:700;fill:var(--ink);font-family:'Noto Sans KR',sans-serif;}
+
+  .guess-line{fill:none;stroke:var(--guess);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 7;}
+  .actual-line{fill:none;stroke:var(--actual);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+  .actual-dot{fill:var(--actual);stroke:var(--paper-2);stroke-width:2;}
+  .actual-val{font-size:12.5px;font-weight:700;fill:var(--actual);font-family:'Noto Sans KR',sans-serif;}
+
+  .drawzone{fill:transparent;cursor:crosshair;}
+  .hint-text{font-size:13px;fill:var(--ink-soft);font-style:italic;}
+
+  .controls{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    margin-top:20px;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:'Noto Sans KR',sans-serif;
+    font-size:13.5px;
+    font-weight:700;
+    padding:11px 22px;
+    border-radius:2px;
+    border:1.4px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    transition:transform .12s ease, background .12s ease, color .12s ease;
+    letter-spacing:0.02em;
+  }
+  button:hover{transform:translateY(-1px);}
+  button.primary{background:var(--navy);border-color:var(--navy);color:var(--paper);}
+  button.primary:hover{background:var(--navy-2);}
+  button:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+
+  .legend{
+    display:flex;
+    gap:22px;
+    justify-content:center;
+    margin-top:16px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    flex-wrap:wrap;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:20px;height:0;border-top-width:3px;border-top-style:solid;}
+
+  .reveal{
+    margin-top:26px;
+    padding-top:20px;
+    border-top:1px dashed var(--rule);
+    display:none;
+  }
+  .reveal.show{display:block;}
+  .reveal-headline{
+    font-family:'Noto Serif KR',serif;
+    font-weight:700;
+    font-size:17px;
+    margin-bottom:12px;
+  }
+  .score-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .score-card{
+    background:var(--paper);
+    border:1px solid var(--rule);
+    padding:12px 10px;
+    text-align:center;
+  }
+  .score-year{font-size:11px;color:var(--ink-soft);font-weight:700;letter-spacing:0.06em;}
+  .score-row{font-size:13px;margin-top:6px;line-height:1.5;}
+  .score-row .g{color:var(--guess);font-weight:700;}
+  .score-row .a{color:var(--actual);font-weight:700;}
+  .score-diff{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+
+  .verdict{
+    font-size:14.5px;
+    line-height:1.75;
+    color:var(--ink);
+    background:var(--paper);
+    border-left:4px solid var(--navy);
+    padding:14px 16px;
+  }
+  .badge{
+    display:inline-block;
+    background:var(--yellow);
+    color:var(--ink);
+    font-size:11px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:2px;
+    margin-left:6px;
+    vertical-align:2px;
+  }
+
+  @media (max-width:520px){
+    .score-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="bg-fluid" aria-hidden="true">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+  <div class="blob blob4"></div>
+</div>
+<div class="wrap">
+
+  <p class="intro">
+    1993년부터 2002년까지, 종이신문 열독률은 <b>87.8% → 82.1%</b>로 완만하게 내려갔습니다.
+    이 흐름을 참고해서 <b>2002년부터 2025년까지</b> 그래프가 어떻게 이어졌을지 직접 그려보세요.
+    선 위에서 마우스(또는 손가락)를 움직이면 예측선이 그려집니다.
+  </p>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">종이신문 열독률 추이 (%)</div>
+      <div class="status" id="statusBadge">2002년부터 선을 그려보세요</div>
+    </div>
+
+    <svg id="chart" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <div class="legend">
+      <span><i class="swatch" style="border-top-color:var(--ink)"></i>주어진 데이터 (1993–2002)</span>
+      <span><i class="swatch" style="border-top-color:var(--guess);border-top-style:dotted"></i>내가 그린 예측선</span>
+      <span id="legendActual" style="display:none;"><i class="swatch" style="border-top-color:var(--actual)"></i>실제 데이터</span>
+    </div>
+
+    <div class="controls">
+      <button id="resetBtn">↺ 다시 그리기</button>
+      <button id="revealBtn" class="primary" disabled>정답 확인하기</button>
+    </div>
+
+    <div class="reveal" id="revealBox">
+      <div class="reveal-headline">📰 실제 데이터와 비교해보세요</div>
+      <div class="score-grid" id="scoreGrid"></div>
+      <div class="verdict" id="verdictText"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById('chart');
+  const W = 900, H = 500;
+  const M = {left:64, right:36, top:70, bottom:56};
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+
+  const knownData = [ [1993,87.8], [2002,82.1] ];
+  const actualData = [ [2002,82.1], [2012,40.9], [2020,10.2], [2025,8.4] ];
+  const yearMin = 1993, yearMax = 2025;
+  const yMax = 100;
+
+  function xScale(year){ return M.left + (year - yearMin)/(yearMax - yearMin) * plotW; }
+  function yScale(val){ return M.top + (yMax - val)/yMax * plotH; }
+  function xToYear(px){ return yearMin + (px - M.left)/plotW * (yearMax - yearMin); }
+  function yToVal(py){ return yMax - (py - M.top)/plotH * yMax; }
+
+  const drawStartX = Math.round(xScale(2002));
+  const drawEndX = Math.round(xScale(2025));
+
+  function el(tag, attrs){
+    const e = document.createElementNS(NS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // ---- static chart chrome ----
+  const gridG = el('g', {});
+  svg.appendChild(gridG);
+  [0,20,40,60,80,100].forEach(v=>{
+    const y = yScale(v);
+    gridG.appendChild(el('line',{class:'grid-line', x1:M.left, x2:W-M.right, y1:y, y2:y}));
+    const t = el('text',{class:'tick-label', x:M.left-10, y:y+4, 'text-anchor':'end'});
+    t.textContent = v;
+    gridG.appendChild(t);
+  });
+
+  const axisG = el('g', {});
+  svg.appendChild(axisG);
+  axisG.appendChild(el('line',{class:'axis-line', x1:M.left, x2:M.left, y1:M.top, y2:H-M.bottom}));
+  axisG.appendChild(el('line',{class:'axis-line', x1:M.left, x2:W-M.right, y1:H-M.bottom, y2:H-M.bottom}));
+
+  [1993,2002,2012,2020,2025].forEach(yr=>{
+    const x = xScale(yr);
+    axisG.appendChild(el('line',{class:'grid-line', x1:x, x2:x, y1:M.top, y2:H-M.bottom, 'stroke-dasharray':'2 4'}));
+    const t = el('text',{class:'year-label', x:x, y:H-M.bottom+22, 'text-anchor':'middle'});
+    t.textContent = yr + '년';
+    axisG.appendChild(t);
+  });
+
+  // known segment (1993-2002)
+  const knownG = el('g', {});
+  svg.appendChild(knownG);
+  const knownPath = 'M ' + knownData.map(d=>xScale(d[0])+','+yScale(d[1])).join(' L ');
+  knownG.appendChild(el('path',{class:'known-line', d:knownPath}));
+  knownData.forEach(d=>{
+    knownG.appendChild(el('circle',{class:'known-dot', cx:xScale(d[0]), cy:yScale(d[1]), r:4.5}));
+    const t = el('text',{class:'known-val', x:xScale(d[0]), y:yScale(d[1])-12, 'text-anchor': d[0]===1993 ? 'start':'middle'});
+    t.textContent = d[1] + '%';
+    knownG.appendChild(t);
+  });
+
+  svg.appendChild(el('text',{class:'hint-text', x:(drawStartX+drawEndX)/2, y:M.top-14, 'text-anchor':'middle'})).textContent =
+    '↓ 여기서부터 2025년까지 그려보세요';
+
+  // ---- user drawing layer ----
+  const guessPath = el('path', {class:'guess-line', d:''});
+  svg.appendChild(guessPath);
+
+  const drawzone = el('rect', {class:'drawzone', x:drawStartX-10, y:M.top-10, width:(drawEndX-drawStartX)+20, height:plotH+20});
+  svg.appendChild(drawzone);
+
+  // points[px - drawStartX] = value (0..100) or null
+  const span = drawEndX - drawStartX;
+  let points = new Array(span+1).fill(null);
+  let hasDrawn = false;
+  let revealed = false;
+  let drawing = false;
+  let lastPx = null, lastVal = null;
+
+  function svgPoint(evt){
+    const pt = svg.createSVGPoint();
+    const src = evt.touches ? evt.touches[0] : evt;
+    pt.x = src.clientX; pt.y = src.clientY;
+    const ctm = svg.getScreenCTM().inverse();
+    return pt.matrixTransform(ctm);
+  }
+
+  function recordPoint(px, val){
+    px = Math.max(drawStartX, Math.min(drawEndX, Math.round(px)));
+    val = Math.max(0, Math.min(100, val));
+    if(lastPx !== null && Math.abs(px - lastPx) > 1){
+      const steps = Math.abs(px - lastPx);
+      const dir = px > lastPx ? 1 : -1;
+      for(let i=1;i<=steps;i++){
+        const p = lastPx + dir*i;
+        const t = i/steps;
+        const v = lastVal + (val - lastVal)*t;
+        points[p - drawStartX] = v;
+      }
+    } else {
+      points[px - drawStartX] = val;
+    }
+    lastPx = px; lastVal = val;
+  }
+
+  function renderGuess(){
+    let d = '';
+    let started = false;
+    for(let i=0;i<points.length;i++){
+      if(points[i] === null) continue;
+      const px = drawStartX + i;
+      const py = yScale(points[i]);
+      d += (started ? ' L ' : 'M ') + px + ',' + py;
+      started = true;
+    }
+    guessPath.setAttribute('d', d);
+  }
+
+  function pointerDown(evt){
+    if(revealed) return;
+    drawing = true;
+    lastPx = null; lastVal = null;
+    pointerMove(evt);
+    evt.preventDefault();
+  }
+  function pointerMove(evt){
+    if(!drawing || revealed) return;
+    const p = svgPoint(evt);
+    if(p.x < drawStartX - 15 || p.x > drawEndX + 15) return;
+    recordPoint(p.x, yToVal(p.y));
+    hasDrawn = true;
+    renderGuess();
+    updateStatus();
+    evt.preventDefault();
+  }
+  function pointerUp(){
+    drawing = false;
+    lastPx = null; lastVal = null;
+  }
+
+  drawzone.addEventListener('mousedown', pointerDown);
+  drawzone.addEventListener('mousemove', pointerMove);
+  window.addEventListener('mouseup', pointerUp);
+  drawzone.addEventListener('touchstart', pointerDown, {passive:false});
+  drawzone.addEventListener('touchmove', pointerMove, {passive:false});
+  window.addEventListener('touchend', pointerUp);
+
+  function coverage(){
+    return points.filter(v=>v!==null).length / points.length;
+  }
+
+  const statusBadge = document.getElementById('statusBadge');
+  const revealBtn = document.getElementById('revealBtn');
+
+  function updateStatus(){
+    const cov = coverage();
+    if(revealed) return;
+    if(cov > 0.9){
+      statusBadge.textContent = '2025년까지 다 그렸어요 — 정답을 확인해보세요';
+      revealBtn.disabled = false;
+    } else if(cov > 0){
+      statusBadge.textContent = '그리는 중… (2025년까지 이어서 그려보세요)';
+      revealBtn.disabled = true;
+    } else {
+      statusBadge.textContent = '2002년부터 선을 그려보세요';
+      revealBtn.disabled = true;
+    }
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    points = new Array(span+1).fill(null);
+    hasDrawn = false;
+    lastPx = null; lastVal = null;
+    renderGuess();
+    if(revealed) location.reload();
+    updateStatus();
+  });
+
+  // ---- reveal actual ----
+  const actualG = el('g', {opacity:0});
+  svg.appendChild(actualG);
+  const actualPathStr = 'M ' + actualData.map(d=>xScale(d[0])+','+yScale(d[1])).join(' L ');
+  const actualPathEl = el('path',{class:'actual-line', d:actualPathStr});
+  actualG.appendChild(actualPathEl);
+  actualData.forEach((d,i)=>{
+    actualG.appendChild(el('circle',{class:'actual-dot', cx:xScale(d[0]), cy:yScale(d[1]), r:5}));
+    if(i>0){
+      const t = el('text',{class:'actual-val', x:xScale(d[0]), y:yScale(d[1]) - (i===2?16:-20), 'text-anchor':'middle'});
+      t.textContent = d[1] + '%';
+      actualG.appendChild(t);
+    }
+  });
+
+  function userValAtYear(year){
+    const px = Math.round(xScale(year));
+    const idx = px - drawStartX;
+    if(idx < 0 || idx >= points.length) return null;
+    if(points[idx] !== null) return points[idx];
+    // find nearest recorded point
+    for(let r=1;r<points.length;r++){
+      if(idx-r>=0 && points[idx-r]!==null) return points[idx-r];
+      if(idx+r<points.length && points[idx+r]!==null) return points[idx+r];
+    }
+    return null;
+  }
+
+  revealBtn.addEventListener('click', function(){
+    revealed = true;
+    revealBtn.disabled = true;
+    drawzone.style.cursor = 'default';
+    statusBadge.textContent = '정답 공개!';
+    statusBadge.classList.add('done');
+    document.getElementById('legendActual').style.display = 'inline-flex';
+
+    actualG.style.transition = 'opacity .6s ease';
+    requestAnimationFrame(()=>{ actualG.setAttribute('opacity', 1); });
+
+    const checkpoints = [2012, 2020, 2025];
+    const scoreGrid = document.getElementById('scoreGrid');
+    scoreGrid.innerHTML = '';
+    let totalErr = 0, n = 0;
+
+    checkpoints.forEach(yr=>{
+      const actual = actualData.find(d=>d[0]===yr)[1];
+      let guess = userValAtYear(yr);
+      if(guess === null) guess = actual; // no penalty if never drawn there
+      const diff = Math.abs(guess - actual);
+      totalErr += diff; n++;
+
+      const card = document.createElement('div');
+      card.className = 'score-card';
+      card.innerHTML =
+        '<div class="score-year">' + yr + '년</div>' +
+        '<div class="score-row"><span class="g">내 예측 ' + guess.toFixed(1) + '%</span></div>' +
+        '<div class="score-row"><span class="a">실제 ' + actual + '%</span></div>' +
+        '<div class="score-diff">차이 ' + diff.toFixed(1) + '%p</div>';
+      scoreGrid.appendChild(card);
+    });
+
+    const avgErr = totalErr / n;
+    let verdict;
+    if(avgErr < 5){
+      verdict = '평균 오차 <b>' + avgErr.toFixed(1) + '%p</b> — 꽤 정확하게 하락 추세를 읽어냈어요. 종이신문 열독률이 이렇게까지 가파르게 무너질 거라 예상한 사람은 많지 않았습니다.';
+    } else if(avgErr < 15){
+      verdict = '평균 오차 <b>' + avgErr.toFixed(1) + '%p</b> — 하락 방향은 맞혔지만, 실제 하락 속도는 예상보다 훨씬 가팔랐습니다. 2012년부터 2020년 사이 열독률이 40.9%에서 10.2%로, 8년 만에 4분의 1 수준으로 줄었거든요.';
+    } else {
+      verdict = '평균 오차 <b>' + avgErr.toFixed(1) + '%p</b> — 실제 하락세는 대부분의 예측보다 훨씬 급격했습니다. 종이신문 열독률은 2025년 <b>8.4%</b>로 역대 최저치를 기록했고, 이는 1993년의 10분의 1에도 못 미치는 수치입니다.<span class="badge">역대 최저</span>';
+    }
+    document.getElementById('verdictText').innerHTML = verdict;
+    document.getElementById('revealBox').classList.add('show');
+    document.getElementById('revealBox').scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+
+  updateStatus();
+})();
+</script>
+</body>
+</html>
